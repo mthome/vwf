@@ -1,0 +1,16 @@
+body {
+  margin: 5px;
+  color: white;
+}
+
+form {
+  border: 2px;
+  border-style: solid;
+  border-color: white;
+  border-radius: 25px;
+  padding: 10px;
+}
+
+form ul {
+  list-style: none;
+}
