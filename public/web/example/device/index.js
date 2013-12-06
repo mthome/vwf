@@ -17,10 +17,11 @@
     vwf_view.firedEvent = function ( nodeID, eventName, eventParameters ) {
         if ( eventName === "deviceConnected" ) {
 
+            var deviceID = eventParameters[ 1 ];
             $deviceList.append(
                 "      <li>\n" +
                 "        <form>\n" +
-                "          <h2>Device Name</h2>\n" +
+                "          <h2>" + deviceID + "</h2>\n" +
                 "          <h3>Properties</h3>\n" +
                 "          <ul>\n" +
                 "            <li>Property Name: <input type='text' value='3'></li>\n" +
@@ -41,7 +42,6 @@
                 "      </li>"
             );
 
-            // var deviceID = eventParameters[ 1 ];
             // vwf_view.kernel.getProperties( deviceID, 0, function( props ) {
             //     for ( var prop in props ) {}
             // } );
