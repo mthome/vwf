@@ -1,0 +1,7 @@
+---
+properties:
+  dummy: 3
+methods:
+  doSomething:
+events:
+  myEvent: 
