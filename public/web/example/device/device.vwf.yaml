@@ -1,6 +1,6 @@
 ---
 properties:
-  dummy: 3
+  myNumber: 3
 methods:
   doSomething:
 events:
