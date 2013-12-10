@@ -45,10 +45,10 @@
     }
 
     vwf_view.firedEvent = function( nodeID, eventName, eventParameters ) {
+        var deviceID = eventParameters[ 1 ];
+        var deviceIDAttr = $.encoder.encodeForAlphaNumeric(deviceID);
         switch( eventName ) {
             case "deviceConnected":
-                var deviceID = eventParameters[ 1 ];
-                var deviceIDAttr = $.encoder.encodeForAlphaNumeric(deviceID);
                 var propertiesListName = "properties-" + deviceIDAttr;
                 var methodsListName = "methods-" + deviceIDAttr;
                 var eventsListName = "events-" + deviceIDAttr;
@@ -88,7 +88,7 @@
                 vwf_view.kernel.getProperties( deviceID );
                 break;
             case "myEvent":
-                $("#myEvent-" + nodeID)[ 0 ].innerHtml = "Last called at " +Date;
+                $("#myEvent-" + deviceIDAttr)[ 0 ].textContent = "Last fired " +Date();
                 break;
         }
     };
