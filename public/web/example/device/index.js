@@ -27,9 +27,20 @@
         }
     }
 
-    vwf_view.satProperty = function( nodeID, propertyName, propertyValue ) {
-        if ( propertyName === "myNumber") {
-            $("#myNumber-" + nodeID)[ 0 ].innerHtml = propertyValue;
+    vwf_view.createdProperty = function ( nodeID, propertyName, propertyValue ) {
+        vwf_view.initializedProperty(nodeID, propertyName, propertyValue);
+    }
+
+    vwf_view.initializedProperty = function ( nodeID, propertyName, propertyValue ) {
+        vwf_view.satProperty(nodeID, propertyName, propertyValue);
+    }
+
+    vwf_view.satProperty = function ( nodeID, propertyName, propertyValue ) {
+        if( propertyName === "myNumber" ) {
+            var nodeIDAttr = $.encoder.encodeForAlphaNumeric(nodeID);
+            if( $("#myNumber-" + nodeIDAttr)[ 0 ] ) {
+                $("#myNumber-" + nodeIDAttr)[ 0 ].textContent = propertyValue;
+            }
         }
     }
 
@@ -37,16 +48,17 @@
         switch( eventName ) {
             case "deviceConnected":
                 var deviceID = eventParameters[ 1 ];
-                var propertiesListName = "properties-" + deviceID;
-                var methodsListName = "methods-" + deviceID;
-                var eventsListName = "events-" + deviceID;
+                var deviceIDAttr = $.encoder.encodeForAlphaNumeric(deviceID);
+                var propertiesListName = "properties-" + deviceIDAttr;
+                var methodsListName = "methods-" + deviceIDAttr;
+                var eventsListName = "events-" + deviceIDAttr;
                 $deviceContainer.append(
                     "      <li>\n" +
                     "        <form>\n" +
                     "          <h2>" + deviceID + "</h2>\n" +
                     "          <h3>Properties</h3>\n" +
                     "          <ul id=" + propertiesListName + ">\n" +
-                    "            <li>myNumber: <span id='myNumber-" + deviceID + "'>0</span></li>\n" +
+                    "            <li>myNumber: <span id='myNumber-" + deviceIDAttr + "'>0</span></li>\n" +
                     "          </ul>\n" +
                     "          <h3>Methods</h3>\n" +
                     "          <ul id=" + methodsListName + ">\n" +
@@ -65,7 +77,7 @@
                     "          <h3>Events</h3>\n" +
                     "          <ul id=" + eventsListName + ">\n" +
                     "            <li>myEvent:\n" +
-                    "              <span id='myEvent-" + deviceID + "'>\n" +
+                    "              <span id='myEvent-" + deviceIDAttr + "'>\n" +
                     "                Has not been called\n" +
                     "              </span>\n" +
                     "            </li>\n" +
