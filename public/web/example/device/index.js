@@ -20,13 +20,6 @@
         }
     };
 
-    vwf_view.gotProperties = function( nodeID, properties ) {
-        $propertyList = $( "#properties-" + nodeID );
-        for ( var prop in properties ) {
-
-        }
-    }
-
     vwf_view.createdProperty = function ( nodeID, propertyName, propertyValue ) {
         vwf_view.initializedProperty(nodeID, propertyName, propertyValue);
     }
@@ -52,9 +45,10 @@
                 var propertiesListName = "properties-" + deviceIDAttr;
                 var methodsListName = "methods-" + deviceIDAttr;
                 var eventsListName = "events-" + deviceIDAttr;
+                var callButtonName = "callButton-" + deviceIDAttr;
                 $deviceContainer.append(
                     "      <li>\n" +
-                    "        <form>\n" +
+                    "        <div class='device'>" +
                     "          <h2>" + deviceID + "</h2>\n" +
                     "          <h3>Properties</h3>\n" +
                     "          <ul id=" + propertiesListName + ">\n" +
@@ -64,11 +58,9 @@
                     "          <ul id=" + methodsListName + ">\n" +
                     "            <li>doSomething:</li>\n" +
                     "            <ul>\n" +
-                    "              <li>myParameter: <input type='text' placeholder='3'></li>\n" +
+                    "              <li>myParameter: <input type='text' placeholder='3' /></li>\n" +
                     "              <li>\n" +
-                    "                <button class='btn' \n" +
-                    "                        onclick='vwf_view.kernel.callMethod( " + deviceID + 
-                                                     ", 'doSomething' )>\n" +
+                    "                <button id='" + callButtonName + "' class='btn'>\n" +
                     "                  Call\n" +
                     "                </button>\n" +
                     "              </li>\n" +
@@ -82,10 +74,12 @@
                     "              </span>\n" +
                     "            </li>\n" +
                     "          </ul>\n" +
-                    "        </form>\n" +
+                    "        </div>" +
                     "      </li>"
                 );
-                vwf_view.kernel.getProperties( deviceID );
+                $("#" + callButtonName ).click( function() {
+                    vwf_view.kernel.callMethod( deviceID, "doSomething" );
+                } );
                 break;
             case "myEvent":
                 $("#myEvent-" + deviceIDAttr)[ 0 ].textContent = "Last fired " +Date();

@@ -3,7 +3,7 @@ body {
   color: white;
 }
 
-form {
+.device {
   border: 2px;
   border-style: solid;
   border-color: white;
@@ -11,6 +11,6 @@ form {
   padding: 10px;
 }
 
-form ul {
+.device ul {
   list-style: none;
 }
