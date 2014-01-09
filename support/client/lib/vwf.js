@@ -5150,6 +5150,10 @@ if ( ! childComponent.source ) {
 
                     var parentNode = this.existing[parentID];
 
+                    if ( ! parentNode ) {
+                        this.globals[nodeID] = undefined;
+                    }
+
                     return this.existing[nodeID] = {
 
                         // id: ...,
@@ -5165,8 +5169,7 @@ if ( ! childComponent.source ) {
                         // type: ...,
 
                         uri: nodeURI,
-
-                        // name: ...,
+                        name: nodeName,
 
                         // Internal state. The change flags are omitted until needed. -- not implemented here yet; still using vwf/model/object
 
@@ -5322,6 +5325,7 @@ if ( ! childComponent.source ) {
                 if ( this.existing[nodeID] ) {
 
                     delete this.existing[nodeID];
+                    delete this.globals[nodeID];
 
                     return true;
 
@@ -5402,6 +5406,15 @@ if ( ! childComponent.source ) {
                 //     ...
                 // }
 
+            },
+
+            /// Global root nodes. Each of these is the root of a tree.
+            /// 
+            /// The `globals` object is a set: the keys are the data, and only existence on the
+            /// object is significant.
+
+            globals: {
+                // id: undefined,
             },
 
         };
