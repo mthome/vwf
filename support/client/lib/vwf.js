@@ -3755,14 +3755,32 @@ if ( ! childComponent.source ) {
         /// 
         /// @see {@link module:vwf/api/kernel.children}
 
-        this.children = function( nodeID ) {
+        this.children = function( nodeID, initializedOnly ) {
 
             if ( nodeID === undefined ) {
                 this.logger.errorx( "children", "cannot retrieve children of nonexistent node" );
                 return;
             }
 
-            return this.models.object.children( nodeID );
+            return this.models.object.children( nodeID, initializedOnly );
+        };
+
+        // -- child --------------------------------------------------------------------------------
+
+        /// @name module:vwf.child
+
+        this.child = function( nodeID, childReference, initializedOnly ) {
+
+            var children = this.children( nodeID, initializedOnly );
+
+            if ( typeof childReference == "number" || childReference instanceof Number ) {
+                return children[childReference];
+            } else {
+                return children.filter( function( childID ) {
+                    return childID && this.name( childID ) === childReference;
+                }, this )[0];
+            }
+
         };
 
         // -- descendants --------------------------------------------------------------------------
@@ -3771,7 +3789,7 @@ if ( ! childComponent.source ) {
         /// 
         /// @see {@link module:vwf/api/kernel.descendants}
 
-        this.descendants = function( nodeID ) {
+        this.descendants = function( nodeID, initializedOnly ) {
 
             if ( nodeID === undefined ) {
                 this.logger.errorx( "descendants", "cannot retrieve children of nonexistent node" );
@@ -3780,10 +3798,10 @@ if ( ! childComponent.source ) {
 
             var descendants = [];
 
-            this.children( nodeID ).forEach( function( childID ) {
+            this.children( nodeID, initializedOnly ).forEach( function( childID ) {
                 descendants.push( childID );
-                Array.prototype.push.apply( descendants, this.descendants( childID ) );
-            }, this );             
+                childID && Array.prototype.push.apply( descendants, this.descendants( childID, initializedOnly ) );
+            }, this );
 
             return descendants;
         };
@@ -4774,16 +4792,28 @@ if ( ! childComponent.source ) {
                     break;
 
                 case "child":
-                    Array.prototype.push.apply( resultIDs, this.children( contextID ) );
+                    Array.prototype.push.apply( resultIDs,
+                        this.children( contextID, initializedOnly ).filter( function( childID ) {
+                            return childID;
+                        }, this )
+                    );
                     break;
 
                 case "descendant":
-                    Array.prototype.push.apply( resultIDs, this.descendants( contextID ) );
+                    Array.prototype.push.apply( resultIDs,
+                        this.descendants( contextID, initializedOnly ).filter( function( descendantID ) {
+                            return descendantID;
+                        }, this )
+                    );
                     break;
 
                 case "descendant-or-self":
                     resultIDs.push( contextID );
-                    Array.prototype.push.apply( resultIDs, this.descendants( contextID ) );
+                    Array.prototype.push.apply( resultIDs,
+                        this.descendants( contextID, initializedOnly ).filter( function( descendantID ) {
+                            return descendantID;
+                        }, this )
+                    );
                     break;
 
                 // case "following-sibling":  // TODO
