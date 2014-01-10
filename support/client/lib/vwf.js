@@ -2692,7 +2692,8 @@ if ( ! childComponent.source ) {
         this.createProperty = function( nodeID, propertyName, propertyValue, propertyGet, propertySet ) {
 
             this.logger.debuggx( "createProperty", function() {
-                return [ nodeID, propertyName, JSON.stringify( loggableValue( propertyValue ) ) ];  // TODO: add truncated propertyGet, propertySet to log
+                return [ nodeID, propertyName, JSON.stringify( loggableValue( propertyValue ) ),
+                    loggableScript( propertyGet ), loggableScript( propertySet ) ];
             } );
 
             var node = nodes.existing[nodeID];
@@ -2705,7 +2706,8 @@ if ( ! childComponent.source ) {
             // models have run.
 
             this.models.forEach( function( model ) {
-                model.creatingProperty && model.creatingProperty( nodeID, propertyName, propertyValue, propertyGet, propertySet );
+                model.creatingProperty && model.creatingProperty( nodeID, propertyName, propertyValue,
+                    propertyGet, propertySet );
             } );
 
             // Record the change.
@@ -2718,7 +2720,8 @@ if ( ! childComponent.source ) {
             // been created.
 
             this.views.forEach( function( view ) {
-                view.createdProperty && view.createdProperty( nodeID, propertyName, propertyValue, propertyGet, propertySet );
+                view.createdProperty && view.createdProperty( nodeID, propertyName, propertyValue,
+                    propertyGet, propertySet );
             } );
 
             this.logger.debugu();
@@ -3076,20 +3079,24 @@ if ( ! childComponent.source ) {
 
         this.createMethod = function( nodeID, methodName, methodParameters, methodBody ) {
 
-            this.logger.debuggx( "createMethod", nodeID, methodName, methodParameters );
+            this.logger.debuggx( "createMethod", function() {
+                return [ nodeID, methodName, methodParameters, loggableScript( methodBody ) ];
+            } );
 
             // Call creatingMethod() on each model. The method is considered created after all
             // models have run.
 
             this.models.forEach( function( model ) {
-                model.creatingMethod && model.creatingMethod( nodeID, methodName, methodParameters, methodBody );
+                model.creatingMethod && model.creatingMethod( nodeID, methodName, methodParameters,
+                    methodBody );
             } );
 
             // Call createdMethod() on each view. The view is being notified that a method has been
             // created.
 
             this.views.forEach( function( view ) {
-                view.createdMethod && view.createdMethod( nodeID, methodName, methodParameters, methodBody );
+                view.createdMethod && view.createdMethod( nodeID, methodName, methodParameters,
+                    methodBody );
             } );
 
             this.logger.debugu();
@@ -3284,7 +3291,7 @@ if ( ! childComponent.source ) {
         this.execute = function( nodeID, scriptText, scriptType ) {
 
             this.logger.debuggx( "execute", function() {
-                return [ nodeID, ( scriptText || "" ).replace( /\s+/g, " " ).substring( 0, 100 ), scriptType ];  // TODO: loggableScript()
+                return [ nodeID, loggableScript( scriptText ), scriptType ];
             } );
 
             // Assume JavaScript if the type is not specified and the text is a string.
@@ -4134,8 +4141,8 @@ if ( ! childComponent.source ) {
             return component;
         };
 
-        /// Convert a fields object as passed between the client and reflector, and stored in the
-        /// message queue, into a form suitable for writing to a log.
+        /// Convert a `fields` object as passed between the client and reflector and stored in the
+        /// message queue into a form suitable for writing to a log.
         /// 
         /// @name module:vwf~loggableFields
         /// 
@@ -4163,7 +4170,7 @@ if ( ! childComponent.source ) {
         /// 
         /// @name module:vwf~loggableValue
         /// 
-        /// @param {Object} component
+        /// @param {Object} value
         /// 
         /// @returns {Object}
 
@@ -4179,9 +4186,9 @@ if ( ! childComponent.source ) {
         /// 
         /// @name module:vwf~loggableValues
         /// 
-        /// @param {Array|undefined} component
+        /// @param {Object[]|undefined} values
         /// 
-        /// @returns {Array|undefined}
+        /// @returns {Object[]|undefined}
 
         var loggableValues = function( values ) {
             return loggableValue( values );
@@ -4192,12 +4199,24 @@ if ( ! childComponent.source ) {
         /// 
         /// @name module:vwf~loggableIndexedValues
         /// 
-        /// @param {Object|undefined} component
+        /// @param {Object|undefined} values
         /// 
         /// @returns {Object|undefined}
 
         var loggableIndexedValues = function( values ) {
             return loggableValue( values );
+        };
+
+        /// Convert script text into a form suitable for writing to a log.
+        /// 
+        /// @name module:vwf~loggableScript
+        /// 
+        /// @param {String|undefined} script
+        /// 
+        /// @returns {String}
+
+        var loggableScript = function( script ) {
+            return ( script || "" ).replace( /\s+/g, " " ).substring( 0, 100 );
         };
 
         // -- remappedURI --------------------------------------------------------------------------
