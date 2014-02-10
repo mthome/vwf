@@ -60,10 +60,12 @@ methods:
   ## @returns undefined
 
   spin: |
+    // this.firstTime = this.firstTime || +new Date() / 1000;
+    // this.logger.warn( "spin", ( +new Date() / 1000 - this.firstTime ).toFixed(4), this.time.toFixed(4) );
     if ( this["spin-spinning"] ) {  // if enabled
       var axis = this["spin-axis"];
-      this.rotateBy( [ axis[0], axis[1], axis[2], this["spin-rate"], 0 ] );
-      this.future( 0.05 ).spin();  // schedule the next step
+      this.rotateBy( [ axis[0], axis[1], axis[2], this["spin-rate"] / 3, 0 ] );
+      this.future( 1/60 ).spin();  // schedule the next step
     }
 
 scripts:

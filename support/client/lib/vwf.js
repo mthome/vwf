@@ -1052,9 +1052,7 @@
 
         // -- dispatch -----------------------------------------------------------------------------
 
-        /// Dispatch incoming messages waiting in the queue. "currentTime" specifies the current
-        /// simulation time that we should advance to and was taken from the time stamp of the last
-        /// message received from the reflector.
+        /// Dispatch incoming messages waiting in the queue.
         /// 
         /// @name module:vwf.dispatch
 
@@ -1089,12 +1087,12 @@
             // Advance time to the most recent time received from the server. Tick if the time
             // changed.
 
-            if ( queue.ready() && this.now != queue.time ) {
-                this.sequence_ = undefined; // clear after the previous action
-                this.client_ = undefined;   // clear after the previous action
-                this.now = queue.time;
-                this.tick();
-            }
+            // if ( queue.ready() && this.now != queue.time ) {
+            //     this.sequence_ = undefined; // clear after the previous action
+            //     this.client_ = undefined;   // clear after the previous action
+            //     this.now = queue.time;
+            //     this.tick();
+            // }
             
         };
 
@@ -5197,7 +5195,17 @@ if ( ! childComponent.source ) {
                     // }
 
                     if ( chronic ) {
-                        this.time = Math.max( this.time, fields.time ); // save the latest allowed time for suspend/resume
+
+                        // Save the latest time authorized by the reflector.
+
+                        this.time = Math.max( this.time, fields.time );
+
+                        // Detect the tick interval and simulation rate.
+
+                        if ( ! fields.action ) {
+                            this.updateStatistics( +new Date(), fields.time );
+                        }
+
                     }
 
                 }, this );
@@ -5245,7 +5253,17 @@ if ( ! childComponent.source ) {
             pull: function() {
 
                 if ( this.suspension == 0 && this.queue.length > 0 && this.queue[0].time <= this.time ) {
-                    return this.queue.shift();                
+
+                    if ( this.queue[0].time <= this.estimatedSimulationTime( +new Date() ) ) {
+                        return this.queue.shift();
+                    } else if ( ! this.timeout ) {
+                        var self = this;
+                        this.timeout = setTimeout( function() {
+                            self.timeout = undefined;
+                            vwf.dispatch();
+                        }, +new Date() - this.estimatedRealTime( this.queue[0].time ) );
+                    }
+
                 }
 
             },
@@ -5316,6 +5334,137 @@ if ( ! childComponent.source ) {
                 return this.suspension == 0;
             },
 
+            /// @name module:vwf~queue.updateStatistics
+            /// 
+            /// @param {Number} realTime
+            /// @param {Number} simulationTime
+            /// 
+            /// @returns {Boolean}
+
+            updateStatistics: function( realTime, simulationTime ) {
+
+                var filterWindows = [ /* 0.1, */ 1, /* 10, */ ];
+                var firstFilterIndex = Infinity;
+
+                // Create the per-filter recording objects when first called.
+
+                if ( this.statistics.currentSample === undefined ) {
+                    filterWindows.forEach( function( windowInterval ) {
+                        var key = windowInterval.toString();
+                        this.statistics.filters[ key ] = {};
+                    }, this );
+                }
+
+                // Record the current tick.
+
+                this.statistics.currentSample = {
+                    index: this.statistics.samples.length,
+                    realTime: realTime,
+                    simulationTime: simulationTime,
+                };
+
+                this.statistics.samples.push( this.statistics.currentSample );
+
+                // For each filter window, look at the recent ticks and deduce the tick interval and
+                // simulation rate.
+
+                filterWindows.forEach( function( windowInterval ) {
+
+                    var key = windowInterval.toString();
+                    var filter = this.statistics.filters[ key ];
+
+                    var potentialSample = this.statistics.samples[ filter.sample ?
+                        filter.sample.index + 1 : 0 ];
+
+                    while ( this.statistics.currentSample.realTime - potentialSample.realTime >= windowInterval ) {
+                        filter.sample = potentialSample;
+                        var potentialSample = this.statistics.samples[ filter.sample.index + 1 ];
+                    }
+
+                    if ( filter.sample ) {
+                        filter.rate = ( this.statistics.currentSample.simulationTime - filter.sample.simulationTime ) /
+                            ( this.statistics.currentSample.realTime - filter.sample.realTime );
+                        filter.interval = ( this.statistics.currentSample.realTime - filter.sample.realTime ) /
+                            ( this.statistics.currentSample.index - filter.sample.index );
+                        firstFilterIndex = Math.min( filter.sample.index, firstFilterIndex );
+                    } else {
+                        firstFilterIndex = 0;
+                    }
+
+                }, this );
+
+                // Clean out the sample log periodically.
+
+                if ( firstFilterIndex > 100 ) {
+
+                    this.statistics.samples.splice( 0, firstFilterIndex );
+
+                    this.statistics.samples.forEach( function( sample ) {
+                        sample.index -= firstFilterIndex;
+                    }, this );
+
+                }
+
+            },
+
+            /// @name module:vwf~queue.estimatedSimulationTime
+            /// 
+            /// @param {Number} realTime
+            /// 
+            /// @returns {Number}
+
+            estimatedSimulationTime: function( realTime ) {
+
+                var delayIntervals = 1.2;  // match `delayIntervals` in `estimatedRealTime`
+
+                var sample = this.statistics.currentSample;
+                var filter1s = this.statistics.filters["1"];
+
+                if ( filter1s && filter1s.interval ) {
+
+                    var elapsedRealTime = realTime - sample.realTime;
+                    var delayRealTime = delayIntervals * filter1s.interval;
+
+                    if ( elapsedRealTime < delayRealTime ) {
+                        return sample.simulationTime + ( elapsedRealTime - delayRealTime ) * filter1s.rate;
+                    } else {
+                        return sample.simulationTime;
+                    }
+
+                } else {
+                    return this.time;
+                }
+
+            },
+
+            /// @name module:vwf~queue.estimatedRealTime
+            /// 
+            /// @param {Number} realTime
+            /// 
+            /// @returns {Number}
+
+            estimatedRealTime: function( simulationTime ) {
+
+                var delayIntervals = 1.2;  // match `delayIntervals` in `estimatedSimulationTime`
+
+                var sample = this.statistics.currentSample;
+                var filter1s = this.statistics.filters["1"];
+
+                if ( filter1s && filter1s.interval ) {
+
+                    var deltaSimulationTime = sample.simulationTime - simulationTime;
+
+                    if ( deltaSimulationTime >= 0 ) {
+                        return sample.realTime + delayIntervals * filter1s.interval -
+                            deltaSimulationTime / filter1s.rate;
+                    } else {
+                        return sample.realTime + delayIntervals * filter1s.interval;
+                    }
+
+                }
+
+            },
+
             /// Current time as provided by the reflector. Messages to be executed at this time or
             /// earlier are available from #pull.
             /// 
@@ -5341,6 +5490,13 @@ if ( ! childComponent.source ) {
             /// @name module:vwf~queue.queue
 
             queue: [],
+
+            /// @name module:vwf~queue.statistics
+
+            statistics: {
+                samples: [],
+                filters: {},
+            },
 
         };
 
